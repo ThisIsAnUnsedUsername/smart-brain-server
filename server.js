@@ -52,7 +52,7 @@ app.use(cors()); //to overcome google security issue
 // };
 
 app.get('', (req, res) => {
-  res.send(database.users);
+  res.send('database.users');
 });
 
 app.post('/signin', signin.handleSignin(db, bcrypt)); //(req,res) get passed in it
