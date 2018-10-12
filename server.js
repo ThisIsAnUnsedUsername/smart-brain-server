@@ -74,4 +74,7 @@ app.post('/imageurl', (req, res) => {
 });
 const PORT = process.env.PORT; //can choose anyname for environment variable, for this case it is PORT
 //capitalize name for environment variable
-app.listen(PORT || 3000, () => console.log(`app is running on port ${PORT}`));
+app.listen(
+  PORT || 3000,
+  () => console.log(`app is running on port ${PORT || 3000}`) //|| can use to choose value over undefined value
+);
