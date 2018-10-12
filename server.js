@@ -2,119 +2,76 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt-nodejs');
 const cors = require('cors');
+const knex = require('knex');
+const register = require('./controllers/register');
+const signin = require('./controllers/signin');
+const profile = require('./controllers/profile');
+const image = require('./controllers/image');
+
+const db = knex({
+  client: 'pg', //pg mean post sql
+  connection: {
+    host: '127.0.0.1', //address for local
+    user: 'postgres', //user name
+    password: 'abce9875', //password
+    database: 'smart-brain'
+  }
+});
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(cors()); //to overcome google security issue
 
-const database = {
-  users: [
-    {
-      id: '123',
-      name: 'John',
-      email: 'john@gmail.com',
-      password: 'cookies',
-      entries: 0,
-      joined: new Date()
-    },
-    {
-      id: '124',
-      name: 'Sally',
-      email: 'sally@gmail.com',
-      password: 'banana',
-      entries: 0,
-      joined: new Date()
-    }
-  ],
-  login: [
-    {
-      id: '987',
-      hash: '',
-      email: 'john@gmail.com'
-    }
-  ]
-};
+// const database = {
+//   users: [
+//     {
+//       id: '123',
+//       name: 'John',
+//       email: 'john@gmail.com',
+//       password: 'cookies',
+//       entries: 0,
+//       joined: new Date()
+//     },
+//     {
+//       id: '124',
+//       name: 'Sally',
+//       email: 'sally@gmail.com',
+//       password: 'banana',
+//       entries: 0,
+//       joined: new Date()
+//     }
+//   ],
+//   login: [
+//     {
+//       id: '987',
+//       hash: '',
+//       email: 'john@gmail.com'
+//     }
+//   ]
+// };
 
 app.get('', (req, res) => {
   res.send(database.users);
 });
 
-app.post('/signin', (req, res) => {
-  //res.send('signin');
-  //res.json('signin'); //this commend send stringify json
-  //Load hash from your password DB.
-  // bcrypt.compare(
-  //   'apple',
-  //   '$2a$10$E36fkd.x1u5em24XkQDemOPC9fnicN/USIefXTWuD2LueJA7NUhfi',
-  //   function(err, res) {
-  //     // res == true
-  //     console.log('first guess', res);
-  //   }
-  // );
-  // bcrypt.compare(
-  //   'veggies',
-  //   '$2a$10$E36fkd.x1u5em24XkQDemOPC9fnicN/USIefXTWuD2LueJA7NUhfi',
-  //   function(err, res) {
-  //     // res = false
-  //     console.log('2nd guess', res);
-  //   }
-  // );
-  if (
-    req.body.email === database.users[0].email &&
-    req.body.password === database.users[0].password
-  ) {
-    res.json(database.users[0]);
-  } else {
-    res.status(400).json('error loginggin in');
-  }
-});
+app.post('/signin', signin.handleSignin(db, bcrypt)); //(req,res) get passed in it
 
 app.post('/register', (req, res) => {
-  const { email, name, password } = req.body;
-  bcrypt.hash(password, null, null, function(err, hash) {
-    // Store hash in your password DB.
-    console.log(hash);
-  });
-  database.users.push({
-    id: '125',
-    name: name,
-    email: email,
-    entries: 0,
-    joined: new Date()
-  });
-  res.json(database.users[database.users.length - 1]); //always remember to put response or else broswer will hang
+  register.handleRegister(req, res, db, bcrypt); //can pass like this, no need import at register.js, this is called dependency injection
 });
 
 app.get('/profile/:id', (req, res) => {
-  const { id } = req.params; //this param is the :id or anything behind profile/
-  let found = false;
-  database.users.forEach(user => {
-    if (user.id === id) {
-      found = true;
-      return res.json(user);
-    } else {
-    }
-  });
-  if (!found) {
-    res.json('no such user').status(404);
-  }
+  profile.handleProfileGet(req, res, db);
 });
 
 app.put('/image', (req, res) => {
-  const { id } = req.body; //this param is the :id or anything behind profile/
-  let found = false;
-  database.users.forEach(user => {
-    if (user.id === id) {
-      found = true;
-      user.entries++;
-      return res.json(user.entries);
-    } else {
-    }
-  });
-  if (!found) {
-    res.json('no such user').status(404);
-  }
+  image.handleImage(req, res, db);
 });
 
-app.listen(3000, () => console.log('app is running on port 3000'));
+app.post('/imageurl', (req, res) => {
+  image.handleApiCall(req, res, db);
+});
+const PORT = process.env.PORT; //can choose anyname for environment variable, for this case it is PORT
+//capitalize name for environment variable
+app.listen(PORT, () => console.log(`app is running on port ${PORT}`));
